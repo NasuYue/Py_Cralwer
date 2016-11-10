@@ -1,6 +1,5 @@
 # Py_Cralwer
----  
-
+  
 ###File description  
 MajorCrawler.py : All the get\[City\]\(\) functions here.  
 Run_Instace.py : execution.  
