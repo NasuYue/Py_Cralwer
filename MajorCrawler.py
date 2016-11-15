@@ -33,7 +33,7 @@ def getContent(url,encoding='utf-8'):
         print("Connection was reset.")
     finally:
         traceback.print_exc()
-        writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+        writeText(traceback.format_exc(),'_ErrorLog.txt')
 
     return content
 
@@ -66,9 +66,35 @@ def postContent(url,post,encoding='utf-8'):
     
     finally:
         traceback.print_exc()
-        writeText(traceback.format_exc(),'PyCrawler-Log.txt') 
+        writeText(traceback.format_exc(),'_ErrorLog.txt') 
 
     return content;
+
+def initial_DB(db_name,coll_name,host="localhost",port=27017):
+    import pymongo
+    client=pymongo.MongoClient(host,port)
+    db=client[db_name]
+    coll=db[coll_name]
+    return coll
+
+def insert_Doc(doc,coll):
+    doc_id = coll.insert(doc)
+    return doc_id
+
+def write_DB(nodeList,db_name='KTGG',coll_name='PublicInfo_Nov16'):
+    coll=initial_DB(db_name,coll_name)
+    for item in nodeList:
+        insert_Doc(item,coll)
+
+    return;
+
+def convertTime(buf):
+    dic={
+        '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '〇':0, '十':'',
+        '年':'-', '月':'-', '日':'','零' : 0,'壹' : 1, '贰' : 2, '叁' : 3, '肆' : 4, '伍' : 5, '陆' : 6,
+        '柒' : 7, '捌' : 8, '玖' : 9, '貮' : 2, '两' : 2,
+    }
+    return;
 
 def writeText(tmp,filename):
     try:
@@ -77,7 +103,7 @@ def writeText(tmp,filename):
             f.write('\r\n')
     except:
         traceback.print_exc()
-        writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+        writeText(traceback.format_exc(),'_ErrorLog.txt')
 
     return;
 
@@ -157,6 +183,7 @@ def getJiangxi(): #江西, 以dic格式存入txt
         buf=getContent(url)
         data = re.search(r'\{"autoCount":.+action"\}', buf).group().replace('true','True').replace('false','False')
         dic=eval(data)
+        dic['网址']=url
 
         writeText(dic,filename)
         print('[江西] page ',i,' saved.')
@@ -173,14 +200,13 @@ def getJiangxi(): #江西, 以dic格式存入txt
 
 def getShandong(): #山东, 以dic格式存入txt
     filename='Shandong.txt'
-    header=['法院','法庭','开庭日期','案由','审判长','原告/上诉人','被告/被上诉人']
+    header=['法院','法庭','开庭日期','案由','审判长','原告/上诉人','被告/被上诉人','网址']
     exts=['0F', '0F1', '0F11', '0F12', '0F13', '0F14', '0F15', '0F16', '0F17', '0F18', '0F19', '0F1A', '0F1B', '0F2', '0F21', '0F22', '0F25', '0F26', '0F27', '0F28', '0F29', '0F2A', '0F2B', '0F2D', '0F3', '0F31', '0F32', '0F33', '0F34', '0F35', '0F36', '0F37', '0F39', '0F4', '0F41', '0F42', '0F43', '0F44', '0F45', '0F46', '0F5', '0F51', '0F52', '0F53', '0F54', '0F55', '0F56', '0F6', '0F61', '0F62', '0F63', '0F64', '0F65', '0F66', '0F67', '0F68', '0F69', '0F6A', '0F6B', '0F6C', '0F6D', '0F6E', '0F7', '0F71', '0F72', '0F73', '0F75', '0F76', '0F77', '0F78', '0F79', '0F7A', '0F7B', '0F7D', '0F7E', '0F8', '0F82', '0F83', '0F84', '0F85', '0F86', '0F87', '0F88', '0F89', '0F8A', '0F8B', '0F8C', '0F8D', '0F9', '0F91', '0F92', '0F94', '0F95', '0F96', '0F97', '0F98', '0FA', '0FA1', '0FA2', '0FA4', '0FA6', '0FB', '0FB2', '0FB3', '0FB4', '0FB5', '0FB6', '0FC', '0FC1', '0FC2', '0FC3', '0FC5', '0FC6', '0FC7', '0FC8', '0FD', '0FD3', '0FD5', '0FD6', '0FD7', '0FD8', '0FD9', '0FDC', '0FE', '0FE1', '0FE2', '0FE3', '0FE4', '0FE5', '0FE6', '0FE7', '0FE8', '0FF', '0FF1', '0FF2', '0FF4', '0FF6', '0FF7', '0FF8', '0FF9', '0FFA', '0FFB', '0FFC', '0FFD', '0FFE', '0FFF', '0FG', '0FG1', '0FG2', '0FG4', '0FG5', '0FG6', '0FG7', '0FG8', '0FG9', '0FGA', '0FH', '0FH1', '0FH2', '0FI', '0FJ', '0FJ1', '0FJ2']
     count=error=0
 
-    for court_no in iter(exts):
+    for court_no in exts:
         for curPage in range(1,10):
-            url='http://www.sdcourt.gov.cn/sdfy_search/tsxx/list.do?tsxx.court_no='\
-            +court_no+'&kssj_start=&kssj_end=&yg=&bg=&curPage='+str(curPage)
+            url='http://www.sdcourt.gov.cn/sdfy_search/tsxx/list.do?tsxx.court_no='+court_no+'&kssj_start=&kssj_end=&yg=&bg=&curPage='+str(curPage)
 
             soup=BeautifulSoup(getContent(url),'html.parser')
         
@@ -193,6 +219,8 @@ def getShandong(): #山东, 以dic格式存入txt
                         for i in range(0,7):
                             tmp=re.sub(r'\s+','',cells[i].find(text=True))
                             List.append(tmp)
+
+                        List.append(url)
 
                         dic=dict.fromkeys(header)
                         it=iter(List)
@@ -277,9 +305,13 @@ def getJilin(): #吉林, 简化的html格式存入txt
             Links.append(ele)
 
         for fwd in iter(Links):
+            dic={}
             soup=BeautifulSoup(getContent(fwd), 'html.parser')
+
             for div in soup.find_all(class_='page'):
-                writeText(div,filename)
+                dic['网址']=fwd
+                dic['内容']=div
+                writeText(dic,filename)
 
             writeText('\r\n['+fwd+']\r\n',filename)
 
@@ -289,7 +321,6 @@ def getJilin(): #吉林, 简化的html格式存入txt
     return;
 
 def getGuangdong(): #广东, 简化的html格式存入txt
-
     filename='Guangdong.txt'
     header=[' 案号','当事人','主审法官','更新时间']
     url_i='http://www.gdcourts.gov.cn/ecdomain/framework/gdcourt/hnohoambadpabboeljehjhkjkkgjbjie.jsp?'
@@ -317,8 +348,11 @@ def getGuangdong(): #广东, 简化的html格式存入txt
         buf=getContent(url)
         soup=BeautifulSoup(buf,'html.parser')
 
+        dic={}
+        dic['网址']=url
         for cells in soup.find_all(class_='table_list_B'):
-            writeText(cells.find_all(True),filename)
+            dic['内容']=cells.find_all(True)
+            writeText(dic,filename)
             # 可直接写解析逻辑
     
     appendix('广东',filename)
@@ -557,7 +591,7 @@ def getAnhui(): #安徽, list存入txt中
             except AttributeError:
                 print(fwd)
                 traceback.print_exc()
-                writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+                writeText(traceback.format_exc(),'_ErrorLog.txt')
                 continue
 
             writeText(result,filename)
@@ -596,7 +630,7 @@ def getLiaoning(): #辽宁, list存入txt中
                 result.append(re.search(r'发布时间：\d{4}-\d{2}-\d{2}',sub).group())
                 result.append(\
                     re.search(
-                        r'[，\w]+一案',sub).group().replace('</b>','') if re.search(r'[，\w]+一案',sub)!=None else ''\
+                        r'[：、，。（）()\w]+?案',sub).group().replace('</b>','') if re.search(r'[：、，。（）()\w]+?案',sub)!=None else ''\
                     )
                 writeText(result,filename)
 
@@ -606,7 +640,7 @@ def getLiaoning(): #辽宁, list存入txt中
         return;
     finally:
         traceback.print_exc()
-        writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+        writeText(traceback.format_exc(),'_ErrorLog.txt')
 
     appendix('辽宁',filename)
     
@@ -623,7 +657,7 @@ def getHainan():#海南, list存入txt中
 
     for fwd in Links:
         result=[]
-        page=re.sub('\s+','',getContent(fwd))
+        page=re.sub('\s+','',getContent(fwd,'gbk'))
 
         try:
             t=re.search('二○一六年\w+月\w+日</p>',page).group().replace('</p>','')
@@ -642,7 +676,7 @@ def getHainan():#海南, list存入txt中
         except AttributeError:
             print(fwd)
             traceback.print_exc()
-            writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+            writeText(traceback.format_exc(),'_ErrorLog.txt')
             continue
 
         writeText(result,filename)
@@ -674,21 +708,29 @@ def getHunan(): #湖南, list存入txt中
                     other+=1
                     continue
 
-        print('Summary(match,none)=', count, ' ', other)
+        print('Summary(match,none)=', count, ',', other)
 
         for fwd in Links:
             page=getContent(fwd)
             soup=BeautifulSoup(page,'html.parser')
             result=[]
-            result.append(fwd)
-            result.append(re.search('发布时间：[\d-]+',page).group())
-            result.append(soup.find_all(class_='detail_bigtitle')[0].string)
 
-            div=str(soup.find_all('div', class_='detail_txt detail_general'))
-            content=re.sub('<.+>','',div)
-            content=re.sub('\s+','',content)
-            result.append(content) 
-            # 去除内容中多余的符号跟空白
+            try:
+                result.append(fwd)
+                result.append(re.search('发布时间：[\d-]+',page).group())
+                result.append(soup.find_all(class_='detail_bigtitle')[0].string)
+
+                div=str(soup.find_all('div', class_='detail_txt detail_general'))
+                content=re.sub('<.+>','',div)
+                content=re.sub('\s+','',content)
+                result.append(content) 
+                # 去除内容中多余的符号跟空白
+
+            except AttributeError:
+                print(fwd)
+                traceback.print_exc()
+                writeText(traceback.format_exc(),'_ErrorLog.txt')
+                continue
 
             writeText(result,filename)
 
@@ -761,7 +803,7 @@ def getNingxia(): #宁夏, list存入txt中
                 t=re.search('二〇一\w年\w+月\w+日{0,1}',page).group()
                 court=re.search('TRS_Editor>.+?法院',page).group()
                 court=re.search('\w+?法院',court).group()
-                content=re.search('[、，（）\w]+?一案',page).group()
+                content=re.search('[：、，。（）()\w]+?一案',page).group()
 
                 result.append(fwd)
                 result.append(t)
@@ -773,7 +815,7 @@ def getNingxia(): #宁夏, list存入txt中
             except AttributeError:
                 print(fwd)
                 traceback.print_exc()
-                writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+                writeText(traceback.format_exc(),'_ErrorLog.txt')
                 continue
 
             writeText(result,filename)
@@ -807,7 +849,7 @@ def getQinhai(): #青海, list存入txt中
             try:
                 t=re.search('2016-\d+-\d+</p>',page).group().replace('</p>','')
                 court=re.search('\w+?法院</h3>',page).group().replace('</h3>','')
-                content=re.search('[、，。（）\w]+?一案',page).group()
+                content=re.search('[：、，。（）()\w]+?一案',page).group()
 
                 result.append(fwd)
                 result.append(t)
@@ -820,7 +862,7 @@ def getQinhai(): #青海, list存入txt中
             except AttributeError:
                 print(fwd)
                 traceback.print_exc()
-                writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+                writeText(traceback.format_exc(),'_ErrorLog.txt')
                 continue
 
             writeText(dic,filename)
@@ -829,7 +871,7 @@ def getQinhai(): #青海, list存入txt中
         print('[青海] Page ',i,' saved.')
 
         if re.search(r'2015-\d+-\d+',buf): # 如果本页有2015的资料, 则到此为止
-            print('[终止] 2016 end.')
+            print('[青海] End at page ',i,'.')
             break
 
     appendix('青海',filename)
@@ -837,8 +879,8 @@ def getQinhai(): #青海, list存入txt中
 
     return;
 
-def getFujian(): #福建, list存入txt中
-    filename='Fujian.txt'
+def getFujian(): #福建, dic->DB
+    header=['省级行政区','网址','内容','时间','法院']
     url='http://www.fjcourt.gov.cn/page/public/courtreport.html?'
     post={
         '__VIEWSTATE':'',
@@ -851,6 +893,7 @@ def getFujian(): #福建, list存入txt中
         post['__EVENTARGUMENT']=i
 
         Links=[]
+        result=[]
         buf=postContent(url,post)
         vs=re.findall('<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*)?"', buf)[0]
         #找到新的viewstate
@@ -859,56 +902,46 @@ def getFujian(): #福建, list存入txt中
             Links.append('http://www.fjcourt.gov.cn'+ele)
 
         for fwd in Links:
-            result=[]
+            node=node.fromkeys(header)
             page=re.sub('\s+','',getContent(fwd))
             
             try:
-                t=re.search('二〇一六年\w+月\w+日',page).group()
-                court=re.findall('<spanclass=\'article-author\'>(\w+?法院)',page)[0] #注意! re.findall为list
-                tittle=re.search('[、，。（）\w]+?开庭公告',page).group()
-                content=re.search('[、，。（）\w]+?特此公告',page).group()
+                node['省级行政区']='福建省'
+                node['网址']=fwd
+                node['时间']=re.search('二〇一六年\w+月\w+日',page).group()
+                node['法院']=re.findall('<spanclass=\'article-author\'>(\w+?法院)',page)[0] #注意! re.findall为list
+                node['标题']=re.search('[：、，。（）()\w]+?开庭公告',page).group()
+                node['内容']=re.search('[：、，。（）()\w]+?特此公告',page).group()
 
-                result.append(fwd)
-                result.append(court)
-                result.append(tittle)
-                result.append(t)
-                result.append(content)
-
+                result.append(node)
                 print(result)
 
             except AttributeError:
                 print(fwd)
                 traceback.print_exc()
-                writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+                writeText(traceback.format_exc(),'_ErrorLog.txt')
                 continue
 
-            writeText(result,filename)
-            time.sleep(0.5)
-            
+        write_DB(result)            
         print('[福建] Page ',i,' saved.')
 
         if re.search('\[2015-\d+-\d+\]',buf): # 如果本页有2015的资料, 则到此为止
-            print('[福建] 2016 end.')
+            print('[福建] End at page ',i,'.')
             break
-
-    appendix('福建',filename)
-    
 
     return;
 
-def getBeijing(): #北京, list存入txt中, 有验证码
+def getBeijing(): #北京, dic->DB, 有验证码
     filename='Beijing.txt'
     url_i='http://www.bjcourt.gov.cn/ktgg/index.htm?c=&court=&start=&end=&type=&p='
-    flag=True 
+    header=['省级行政区','网址','内容','时间','法院']
+    flag=True
 
     for i in range(1,7000):
         url=url_i+str(i)
         buf=getContent(url)
         Links=[]
-
-        if re.search('验证码',buf):
-            print('[终止] 必须填写验证码.')
-            break
+        
 
         for ele in re.findall('<a href="(/ktgg/ktggDetailInfo.htm?[\s\S]+?)"',buf):
                 Links.append('http://www.bjcourt.gov.cn'+ele)
@@ -917,16 +950,21 @@ def getBeijing(): #北京, list存入txt中, 有验证码
             result=[]
             page=re.sub('\s+','',getContent(fwd))
 
-            if re.search('二〇一五年',page): # 如果本页有2015的资料, 则到此为止
+            if re.search('定于二〇一五年',page): # 如果本页有2015的资料, 则到此为止
+                print('[北京] 2016 end.')
                 flag=False
-                print('[终止] 2016 end.')
                 break
+            elif re.search('验证码',page):
+                print('[北京] ',fwd)
+                print('[北京] 验证码,等待90秒后重试.')
+                time.sleep(90)
 
             try:
                 t=re.search('二〇一六年\w+月\w+日',page).group()
                 court=re.search('来源:\w+?法院',page).group().replace('来源:','')
-                content=re.search('[：.、，。（）\w]+?一案',page).group()
-
+                content=re.search('[：、，。.（）()\w]+?一案',page).group()
+                
+                result.append('北京市')
                 result.append(fwd)
                 result.append(t)
                 result.append(court)
@@ -937,24 +975,22 @@ def getBeijing(): #北京, list存入txt中, 有验证码
             except AttributeError:
                 print(fwd)
                 traceback.print_exc()
-                writeText(traceback.format_exc(),'PyCrawler-Log.txt')
+                writeText(traceback.format_exc(),'_ErrorLog.txt')
                 continue
 
-            writeText(result,filename)
-            time.sleep(0.5)
-
-        if flag==False: #跳出两层loop
+        if flag==False:
+            print('[北京] End at page ',i,'.')
             break
         else:
+            writeText(result,filename)
+            #write_DB(result)
             print('[北京] Page ',i,' saved.')
-
-    appendix('北京',filename)
     
     return;
 
 # ==============================<<Instance>>==============================
 
 
-with open('MajorCrawler.py','r',encoding='utf8') as f:
+with open('E:\Yue\PY\Final\MajorCrawler.py','r',encoding='utf8') as f:
     l=re.findall('get(\w+?)\(\):',f.read())
     print('Current crawlers: ',len(l))

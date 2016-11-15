@@ -16,10 +16,10 @@ def insert_Doc(coll,doc):
 def parseList(strr): #解析成dic
     dic={}
 
-    if re.findall('\[(http\S+?)\]',strr):
-        dic['网址']=re.findall('\[(http\S+?)\]',strr)[0]
-    if re.findall('http://\S+?\'l',strr):
-        dic['网址']=re.findall('(http://\S+?)\'',strr)[0]
+    if re.findall(r"\[(http[\S]+?)\]",strr):
+        dic['网址']=re.search(r"\[(http[\S]+?)\]",strr).group()
+    if re.findall(r"\'(http://[\S]+?)\'",strr):
+        dic['网址']=re.findall(r"\'(http://[\S]+?)\'",strr)[0]
 
     if re.search('[：、，。（）()\w]+?一案',strr):
         dic['公告正文']=re.search('[：、，。（）()\w]+?一案',strr).group() 
@@ -71,28 +71,42 @@ def getDictLst(key,filename,flag): # 回传除重后dic组成的list
     result=[]
     dic={}
     
-    with open('E:\Yue\PY\data\\'+filename,'r',encoding='utf-8') as f:
+    with open('E:\Yue\PY\data\\'+filename,'r',encoding='utf-8',errors='ignore') as f:
         buf=re.sub('\s+','',f.read())
         buf=re.sub('\[\w{2,3}\]','',buf)
         buf=re.sub('\[[-:\d\s]+?\]','',buf)
         # 除去Appendix
 
     for item in deDuplicate(key,buf):
-        if flag==0: # list
-            dic= parseList(item)
+        try:
+            if flag==0: # list
+                dic= parseList(item)
 
-        elif flag==1: # node
-            link=re.findall('\[(http\S+?)\]',item)[0] if re.findall('\[(http\S+?)\]',item) else ''
-            node=re.sub('\[http\S+?\]','',item)
-            dic={'网址':link , '内容':node}
+            elif flag==1: # node
+                
+                if re.search(r"\[(http[\S]+?)\]",item):
+                    link=re.findall(r"\[(http[\S]+?)\]",item)[0] 
+                else:
+                    link=''
 
-        elif flag==2: # dict
-            dic=eval(item)
+                node=re.sub(r"\[(http[\S]+?)\]",'',item)
+                dic={'网址':link , '内容':node}
 
-        else:
-            print('Flag is not define:',flag)
+            elif flag==2: # dict
+                dic=eval(item)
+                print(item)
 
-        result.append(dic)
+            else:
+                print('Flag is not define:',flag)
+
+            result.append(dic)
+
+        except:
+            continue
+
+        finally:
+            traceback.print_exc()
+            writeText(traceback.format_exc(),'PyCrawler-Log.txt')
 
     print('Set:',len(result))
 
@@ -117,7 +131,8 @@ dic={
     '安徽省': 'Anhui', '辽宁省': 'Liaoning', '山东省': 'Shandong', '广东省': 'Guangdong', '河南省': 'Henan', 
     '浙江省': 'Zhejiang', '宁夏回族自治区': 'Ningxia', '云南省': 'Yunnan', '重庆市': 'Chongqing', '江西省': 'Jiangxi', 
     '贵州省': 'Guizhou', '海南省': 'Hainan', '青海省': 'Qinhai', '湖南省': 'Hunan', '内蒙古自治区': 'InnerMongolia', 
-    '天津市': 'Tianjin', '福建省': 'Fujian', '上海市': 'Shanghai'}
+    '天津市': 'Tianjin', '福建省': 'Fujian' #, '上海市': 'Shanghai'
+}
 
 # flag=0
 lst_Key={
@@ -130,15 +145,13 @@ node_Key={
     '安徽省':'<divstyle=\"text-align:center\">[\S]+?\]', '重庆市':'<tbody>[\S]+?\]', 
     '内蒙古自治区':'<divclass="ywzw_con_inner">[\S]+?\]','河北省':'<divclass="ywzw_con_inner">[\S]+?</div>',
     '云南省':'<divclass="ywzw_con_inner">[\S]+?\]', '贵州省':'<divstyle=\"min-height:400px;\">[\S]+?</div>',
-    '天津市':'天津[\S]+?一案', '江西省':'\{[\S\s]+?\}', '吉林省':'<divclass=\"page\">[\S]+?</div>',
-    '湖北省':'<divclass=\"ywzw_con_inner\">[\S]+?</div>', '广东省': '\[[\S]+?\]', '河南省': '<divclass="list">[\S]+?</div>',
-    '上海市': '<TR>[\S]+?</TR>'
+    '天津市':'>天津[\S]+?一案。{0,1}<br/>', '江西省':'\{[\S\s]+?\}', '吉林省':'<divclass=\"page\">[\S]+?</div>',
+    '湖北省':'<tr>[\S]+?</tr>', '广东省': '\[[\S]+?\]', '河南省': '<divclass="list">[\S]+?</div>' #,'上海市': '<TR>[\S]+?</TR>'
 }
 
 dic_key={
-    '山东省':'\{[\S]+?\}', '浙江省': '\{[\S]+?\}'
+    '山东省':'\{[\S]+?\}' , '浙江省': '\{[\S]+?\}'
 }
-
 
 for k,v in lst_Key.items():
     coll_name= dic[k]+'_Court'
@@ -152,11 +165,8 @@ for k,v in node_Key.items():
     print('[',k,']')
     access(v,coll_name,db_name,k,filename,1)
 
-
 for k,v in dic_key.items():
     coll_name= dic[k]+'_Court'
     filename= dic[k]+'.txt'
     print('[',k,']')
     access(v,coll_name,db_name,k,filename,2)
-
-# issue: 山东 北京

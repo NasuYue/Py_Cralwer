@@ -29,12 +29,12 @@ def parseShanghai():
     # Query包含重复的header, 记得到Robomongo去移除
     # db.getCollection('Shanghai_Hign_People_Court').find({"上海市高级人民法院.案由" : "案由"})
     
-    db_name='Public_Info_Oct16'
-    coll_name='Shanghai_Hign_People_Court'
+    db_name='Public_Info_Nov16'
+    coll_name='Shanghai_Court'
     header=["法院","法庭","开庭日期","案号","案由","承办部门","审判长/主审人","原告/上诉人","被告/被上诉人"] 
     #样本
 
-    text_file=open("hshfy.txt")
+    text_file=open("E:\Yue\PY\data\Shanghai.txt",encoding='utf-8',errors='ignore')
     text_query=text_file.read()
     text_file.close()
     # ---------开启网页原始挡案---------
@@ -45,19 +45,22 @@ def parseShanghai():
     # 不要用html5Parser, 效能差
 
     for table in soup.find_all("tbody"):
-        for row in table.find_all('tr'):
-            cells = row.find_all(re.compile('td'))
-            print("Parsing cells ...")
-            if len(cells)==9:
-                List=[]
-                for i in range(0,9):
-                    List.append(cells[i].find(text=True).replace('\xa0','')) # '\xa0'为GBK无法解析的空白
+        try:
+            for row in table.find_all('tr'):
+                cells = row.find_all(re.compile('td'))
+                print("Parsing cells ...")
+                if len(cells)==9:
+                    List=[]
+                    for i in range(0,9):
+                        List.append(cells[i].find(text=True).replace('\xa0','')) # '\xa0'为GBK无法解析的空白
 
-                tmp=createDict("上海市高级人民法院",header,List)
-                insert_Doc(coll,tmp)
-                count+=1
-            else:
-                error+=1
+                    tmp=createDict("上海市高级人民法院",header,List)
+                    insert_Doc(coll,tmp)
+                    count+=1
+                else:
+                    error+=1
+        except:
+            content
 
     print("上海 is finished.")
     print("Summary(count,error): ",count,", ",error)
@@ -97,12 +100,4 @@ def deduction(key,filename): # 产生filename_d.txt
 #------------------------------------------------------------------------
 
 
-with open('E:\Yue\PY\Final\MajorCrawler.py','r',encoding='utf-8') as f:
-    filename_List=re.findall('filename=\'(\w+.txt)\'',f.read())
-
-
-# 去重
-
-filename='Gansu.txt'
-lstKey='\[[\S]+?\]'
-
+parseShanghai()

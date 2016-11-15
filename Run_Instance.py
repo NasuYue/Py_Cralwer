@@ -18,21 +18,21 @@ try:
 	getHenan()
 	getHubei()
 	getGuizhou()
-	
-	getYunnan()
 	getTianjin()
-	getFujian()
 	getInnerMongolia()
+	#getBeijing()
+	#北京另外处里
+	getFujian()
 	getLiaoning()
 	getChongqing()
 	getGuangdong()
+	getShandong()
 
 	# issue
+	getHebei()
+	getBeijing()
 	getShanghai()
 	getZhejiang()
-	getShandong()
-	getBeijing()
-	getHebei()
 
 except:
 	traceback.print_exc()
